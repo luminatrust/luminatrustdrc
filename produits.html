@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Vault VIP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --accent: #2ecc71; --bg: #f8faff; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); padding: 20px; padding-bottom: 100px; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--primary); font-size: 24px; margin-bottom: 5px; }
+        
+        .vip-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+
+        .vip-card { 
+            background: white; border-radius: 25px; overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #eef2f7;
+        }
+
+        .vip-img { width: 100%; height: 180px; background-size: cover; background-position: center; }
+
+        .vip-info { padding: 20px; }
+        .vip-title { font-size: 20px; font-weight: 600; color: var(--primary); display: flex; justify-content: space-between; }
+        
+        .stats { display: flex; justify-content: space-between; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+        .stat-box { text-align: left; }
+        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+        .stat-value { font-size: 14px; font-weight: 600; color: var(--text); }
+
+        .btn-buy { 
+            width: 100%; padding: 15px; border: none; background: var(--primary); color: white; 
+            border-radius: 15px; margin-top: 20px; font-weight: 600; cursor: pointer;
+        }
+
+        /* Nav Basse */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; text-decoration: none; }
+        .active { color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Vault d'Investissement</h1>
+        <div id="balance-box" style="background:#eff6ff; padding:15px; border-radius:20px; margin: 15px 0; border: 1px solid #dbeafe;">
+            <p style="margin:0; font-size: 12px; color: #60a5fa; text-transform:uppercase;">Votre Solde Disponible</p>
+            <h2 id="display-solde" style="margin:5px 0 0; color: var(--primary);">0 FC</h2>
+        </div>
+        <p style="color:#64748b; font-size: 14px;">Sélectionnez votre plan de croissance</p>
+    </div>
+
+    <div class="vip-grid" id="vip-list"></div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">🏠 Accueil</a>
+        <a href="produits.html" class="nav-item active">📦 Produits</a>
+        <a href="equipe.html" class="nav-item">👥 Équipe</a>
+        <a href="profil.html" class="nav-item">👤 Profil</a>
+    </nav>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const products = [
+        { id: 1, name: "VIP 1", price: 30000, daily: 6500, img: "IMG_3101.jpeg" },
+        { id: 2, name: "VIP 2", price: 65000, daily: 11500, img: "IMG_3102.jpeg" },
+        { id: 3, name: "VIP 3", price: 120000, daily: 22500, img: "IMG_3104.jpeg" },
+        { id: 4, name: "VIP 4", price: 250000, daily: 50000, img: "IMG_3105.jpeg" },
+        { id: 5, name: "VIP 5", price: 400000, daily: 89000, img: "IMG_3106.jpeg" },
+        { id: 6, name: "VIP 6", price: 565000, daily: 100000, img: "IMG_3107.jpeg" },
+        { id: 7, name: "VIP 7", price: 840000, daily: 147000, img: "IMG_3108.jpeg" },
+        { id: 8, name: "VIP 8", price: 1200000, daily: 320000, img: "IMG_3109.jpeg" },
+        { id: 9, name: "VIP 9", price: 1450000, daily: 380000, img: "IMG_3110.jpeg" },
+        { id: 10, name: "VIP 10", price: 2500000, daily: 550000, img: "IMG_3111.jpeg" },
+        { id: 11, name: "VIP 11", price: 5000000, daily: 1200000, img: "IMG_3112.jpeg" },
+        { id: 12, name: "VIP 12", price: 10000000, daily: 2500000, img: "IMG_3114.jpeg" }
+    ];
+
+    const container = document.getElementById('vip-list');
+    const userPhone = localStorage.getItem('userPhone');
+
+    // Affichage solde temps réel
+    if(userPhone) {
+        onValue(ref(db, 'users/' + userPhone), (snap) => {
+            if(snap.exists()) {
+                const uData = snap.val();
+                document.getElementById('display-solde').innerText = (uData.solde || 0).toLocaleString() + " FC";
+            }
+        });
+    }
+
+    products.forEach(p => {
+        container.innerHTML += `
+            <div class="vip-card">
+                <div class="vip-img" style="background-image: url('${p.img}')"></div>
+                <div class="vip-info">
+                    <div class="vip-title">💎 ${p.name} <span>${p.price.toLocaleString()} FC</span></div>
+                    <div class="stats">
+                        <div class="stat-box"><div class="stat-label">Gain / Jour</div><div class="stat-value" style="color:var(--accent)">+ ${p.daily.toLocaleString()} FC</div></div>
+                        <div class="stat-box"><div class="stat-label">Durée</div><div class="stat-value">30 Jours</div></div>
+                    </div>
+                    <button class="btn-buy" onclick="buyProduct(${p.id})">INVESTIR MAINTENANT</button>
+                </div>
+            </div>
+        `;
+    });
+
+    window.buyProduct = async (id) => {
+        const p = products.find(x => x.id === id);
+        if(!userPhone) return alert("Veuillez vous connecter.");
+
+        const uRef = ref(db, 'users/' + userPhone);
+        const snap = await get(uRef);
+        const user = snap.val();
+
+        if(!user || user.solde < p.price) return alert("Solde insuffisant pour ce VIP.");
+
+        if(confirm(`Investir ${p.price} FC dans le ${p.name} ?`)) {
+            await update(uRef, { solde: user.solde - p.price });
+            const purchaseRef = ref(db, `users/${userPhone}/achats`);
+            await push(purchaseRef, {
+                produitId: p.id,
+                nom: p.name,
+                gainJour: p.daily,
+                dateAchat: new Date().toISOString(),
+                expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            });
+
+            distribuerCommissions(user.parraine_par, p.price);
+            alert("Investissement réussi ! Vos revenus commenceront dans 24h.");
+        }
+    };
+
+    async function distribuerCommissions(parrainPhone, montant) {
+        const taux = [0.25, 0.03, 0.01];
+        let currentParrain = parrainPhone;
+
+        for(let i=0; i<3; i++) {
+            if(!currentParrain || currentParrain === "DIRECT") break;
+            const pRef = ref(db, 'users/' + currentParrain);
+            const pSnap = await get(pRef);
+            if(pSnap.exists()) {
+                const gain = montant * taux[i];
+                await update(pRef, { 
+                    solde: (pSnap.val().solde || 0) + gain,
+                    total_commissions: (pSnap.val().total_commissions || 0) + gain
+                });
+                currentParrain = pSnap.val().parraine_par;
+            } else break;
+        }
+    }
+</script>
+</body>
+</html>
