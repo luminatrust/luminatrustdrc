@@ -31,7 +31,7 @@
     <div class="team-header">
         <h1 style="margin:0; font-size: 22px;">Votre Réseau Lumina</h1>
         <div class="referral-box" onclick="copyRef()">
-            <div style="font-size: 10px; opacity: 0.7;">VOTRE CODE</div>
+            <div style="font-size: 10px; opacity: 0.7;">VOTRE CODE (CLIQUEZ POUR COPIER LE LIEN)</div>
             <div class="ref-code" id="myCode">Chargement...</div>
         </div>
     </div>
@@ -63,14 +63,12 @@
         if (!userPhone) {
             document.getElementById('myCode').innerText = "Non connecté";
         } else {
-            // 1. Récupérer mon profil
             onValue(ref(db, 'users/' + userPhone), (snap) => {
                 const data = snap.val();
                 if (data) {
                     document.getElementById('myCode').innerText = data.mon_code || "NON-DEFINI";
                     document.getElementById('totalCom').innerText = (data.total_commissions || 0).toLocaleString() + " FC";
                     
-                    // 2. Une fois le code connu, calculer le réseau
                     const myCode = data.mon_code;
                     onValue(ref(db, 'users'), (snapUsers) => {
                         const users = Object.values(snapUsers.val() || {});
@@ -91,8 +89,14 @@
 
         window.copyRef = () => {
             const code = document.getElementById('myCode').innerText;
-            navigator.clipboard.writeText(code);
-            alert("Code copié : " + code);
+            if(code === "Chargement..." || code === "Non connecté") return;
+            
+            // Construit le lien vers votre page d'inscription
+            const link = window.location.origin + "/register.html?ref=" + code;
+            
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Lien de parrainage copié : " + link);
+            });
         };
     </script>
 </body>
