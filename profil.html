@@ -9,12 +9,10 @@
         :root { --primary: #2563eb; --danger: #ff4757; --text: #1e293b; }
         body { margin: 0; font-family: 'Outfit', sans-serif; background: #f8faff; color: var(--text); padding-bottom: 100px; }
 
-        /* HEADER PROFIL */
         .profile-header { background: linear-gradient(135deg, #1e293b, #2563eb); color: white; padding: 50px 20px; text-align: center; border-radius: 0 0 40px 40px; }
         .avatar-circle { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 2px solid white; }
         .user-id { background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-size: 12px; display: inline-block; margin-top: 5px; }
 
-        /* LISTE DES OPTIONS */
         .menu-container { padding: 20px; margin-top: -20px; }
         .menu-group { background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
         
@@ -30,7 +28,6 @@
         
         .logout-btn { color: var(--danger); font-weight: 600; cursor: pointer; }
 
-        /* NAV BASSE */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; padding: 12px 0; border-top: 1px solid #eee; z-index: 100; }
         .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; text-decoration: none; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
@@ -47,13 +44,6 @@
 
     <div class="menu-container">
         <div class="menu-group">
-            <a href="transactions.html" class="menu-item">
-                <div class="item-info">
-                    <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9;">📜</div>
-                    <span>Historique de transactions</span>
-                </div>
-                <span>❯</span>
-            </a>
             <a href="recharge.html" class="menu-item">
                 <div class="item-info">
                     <div class="icon-box" style="background:#f0fdf4; color:#22c55e;">💰</div>
@@ -61,19 +51,40 @@
                 </div>
                 <span>❯</span>
             </a>
+            <a href="transactions.html" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9;">📜</div>
+                    <span>Historique des transactions</span>
+                </div>
+                <span>❯</span>
+            </a>
+            <a href="retraits.html" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#fefce8; color:#ca8a04;">📉</div>
+                    <span>Historique des retraits</span>
+                </div>
+                <span>❯</span>
+            </a>
         </div>
 
         <div class="menu-group">
+            <a href="mes-produits.html" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#fdf2f8; color:#db2777;">☀️</div>
+                    <span>Mes produits loués</span>
+                </div>
+                <span>❯</span>
+            </a>
             <div class="menu-item" onclick="alert('Fonction bientôt disponible')">
                 <div class="item-info">
                     <div class="icon-box" style="background:#fff7ed; color:#f97316;">🔑</div>
                     <span>Changer mon code PIN</span>
                 </div>
                 <span>❯</span>
-            </a>
+            </div>
             <a href="https://chat.whatsapp.com/L1UhdHu6CxF8fX3z5CkbsJ" class="menu-item">
                 <div class="item-info">
-                    <div class="icon-box" style="background:#fdf2f8; color:#db2777;">🎧</div>
+                    <div class="icon-box" style="background:#ecfdf5; color:#059669;">🎧</div>
                     <span>Support Client (WhatsApp)</span>
                 </div>
                 <span>❯</span>
@@ -91,20 +102,17 @@
     </div>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Accueil</a>
-        <a href="produits.html" class="nav-item"><span class="nav-icon">📦</span>Produits</a>
-        <a href="equipe.html" class="nav-item"><span class="nav-icon">👥</span>Équipe</a>
-        <a href="profil.html" class="nav-item active"><span class="nav-icon">👤</span>Profil</a>
+        <a href="dashboard.html" class="nav-item">🏠 Accueil</a>
+        <a href="produits.html" class="nav-item">📦 Produits</a>
+        <a href="equipe.html" class="nav-item">👥 Équipe</a>
+        <a href="profil.html" class="nav-item active">👤 Profil</a>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
+        const db = getDatabase(initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" }));
         const userPhone = localStorage.getItem('userPhone');
 
         if(userPhone) {
