@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Transactions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: #f8faff; padding-bottom: 80px; }
+        .header { background: #2563eb; color: white; padding: 40px 20px; border-radius: 0 0 40px 40px; text-align: center; }
+        .container { padding: 20px; }
+        .card { background: white; padding: 18px 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .type { font-weight: 600; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header"><h1>Transactions</h1></div>
+    <div class="container" id="transList">Chargement...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const app = initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" });
+        const db = getDatabase(app);
+        const userPhone = localStorage.getItem('userPhone');
+
+        const list = document.getElementById('transList');
+        if(!userPhone) window.location.href = "index.html";
+
+        onValue(ref(db, 'transactions/' + userPhone), (snap) => {
+            list.innerHTML = "";
+            if(!snap.exists()) return list.innerHTML = "<p style='text-align:center;'>Aucune transaction.</p>";
+            
+            snap.forEach((child) => {
+                const tr = child.val();
+                list.innerHTML += `
+                    <div class="card">
+                        <div>
+                            <div class="type" style="color:${tr.type === 'Retrait' ? '#ff4757' : '#22c55e'}">${tr.type}</div>
+                            <small style="color:#94a3b8;">${tr.date}</small>
+                        </div>
+                        <div style="font-weight:600;">${tr.montant.toLocaleString()} FC</div>
+                    </div>`;
+            });
+        });
+    </script>
+</body>
+</html>
