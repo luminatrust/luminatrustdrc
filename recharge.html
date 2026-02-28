@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina 3 - Recharge VIP</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 15px; color: #333; }
+        .container { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { font-size: 18px; text-align: center; color: #1e293b; margin-bottom: 20px; }
+
+        /* GRILLE VIP 12 CARREAUX */
+        .vip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .vip-card { 
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; 
+            padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s;
+        }
+        .vip-card.active { border: 2px solid #2563eb; background: #eff6ff; transform: scale(1.05); }
+        .vip-card b { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; }
+        .vip-card span { font-size: 13px; font-weight: bold; color: #2563eb; }
+
+        /* RÉSEAUX ET AGENTS */
+        .net-title { font-size: 13px; font-weight: bold; margin: 15px 0 10px; color: #475569; }
+        .net-group { display: flex; gap: 8px; margin-bottom: 15px; }
+        .net-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; text-align: center; cursor: pointer; font-weight: bold; font-size: 12px; background: white; }
+        .net-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
+
+        .agent-info { background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: none; text-align: center; }
+        .agent-num { font-size: 19px; font-weight: 800; color: #b91c1c; display: block; margin: 5px 0; letter-spacing: 1px; }
+
+        /* FORMULAIRE */
+        .input-box { margin-bottom: 15px; }
+        label { font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        input { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; background: #f8fafc; }
+        input:focus { border-color: #2563eb; background: white; }
+        
+        .btn-confirm { width: 100%; padding: 18px; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dépôt Lumina 3</h2>
+
+    <div class="net-title">1. MONTANT DU VIP À RECHARGER</div>
+    <div class="vip-grid" id="gridVip">
+        </div>
+
+    <div class="net-title">2. RÉSEAU DE TRANSFERT</div>
+    <div class="net-group">
+        <div class="net-btn" onclick="setNet(this, 'Vodacom', '0824661307')">M-Pesa</div>
+        <div class="net-btn" onclick="setNet(this, 'Airtel', '0992675441')">Airtel</div>
+        <div class="net-btn" onclick="setNet(this, 'Orange', '0802667704')">Orange</div>
+    </div>
+
+    <div class="agent-info" id="agentBox">
+        <span id="agentLabel" style="font-size: 12px; color: #92400e; font-weight: 600;"></span>
+        <span class="agent-num" id="agentPhone">0000000000</span>
+        <small style="color: #b45309;">Veuillez copier ce numéro pour le transfert</small>
+    </div>
+
+    <div class="input-box">
+        <label>Numéro de l'expéditeur (Le vôtre)</label>
+        <input type="tel" id="senderPhone" placeholder="Ex: 08XXXXXXXX" maxlength="10">
+    </div>
+
+    <div class="input-box">
+        <label>ID de transaction (Référence SMS)</label>
+        <input type="text" id="transID" placeholder="Ex: PP260228.1234.X">
+    </div>
+
+    <button class="btn-confirm" onclick="validerDepot()">Soumettre la preuve</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // VOS PRIX EXACTS
+    const mesVips = [
+        {n: "VIP 1", p: 30000}, {n: "VIP 2", p: 65000}, {n: "VIP 3", p: 120000},
+        {n: "VIP 4", p: 250000}, {n: "VIP 5", p: 400000}, {n: "VIP 6", p: 565000},
+        {n: "VIP 7", p: 840000}, {n: "VIP 8", p: 1200000}, {n: "VIP 9", p: 1450000},
+        {n: "VIP 10", p: 2500000}, {n: "VIP 11", p: 5000000}, {n: "VIP 12", p: 10000000}
+    ];
+
+    let selectPrice = 0; let selectVip = ""; let selectNet = "";
+
+    // Afficher les carreaux
+    const grid = document.getElementById('gridVip');
+    mesVips.forEach(v => {
+        const d = document.createElement('div');
+        d.className = 'vip-card';
+        d.innerHTML = `<b>${v.n}</b><span>${v.p.toLocaleString()} FC</span>`;
+        d.onclick = function() {
+            document.querySelectorAll('.vip-card').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            selectPrice = v.p; selectVip = v.n;
+        };
+        grid.appendChild(d);
+    });
+
+    // Sélection réseau Agent
+    window.setNet = (el, net, phone) => {
+        document.querySelectorAll('.net-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        selectNet = net;
+        document.getElementById('agentBox').style.display = "block";
+        document.getElementById('agentLabel').innerText = "NUMÉRO AGENT " + net.toUpperCase();
+        document.getElementById('agentPhone').innerText = phone;
+    };
+
+    window.validerDepot = async () => {
+        const tid = document.getElementById('transID').value;
+        const sender = document.getElementById('senderPhone').value;
+        const user = localStorage.getItem('userPhone');
+
+        if(!selectPrice || !selectNet || !tid || !sender) return alert("Erreur : Sélectionnez un VIP, un réseau et remplissez les champs !");
+
+        await set(push(ref(db, 'deposits')), {
+            user_phone: user,
+            vip_name: selectVip,
+            montant: selectPrice,
+            reseau: selectNet,
+            id_transaction: tid,
+            numero_expediteur: sender,
+            statut: "EN_ATTENTE",
+            date: new Date().toLocaleString()
+        });
+
+        alert("Demande envoyée ! Attendez la confirmation de l'admin.");
+        window.location.href = "dashboard.html";
+    };
+</script>
+</body>
+</html>
