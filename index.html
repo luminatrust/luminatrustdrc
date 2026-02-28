@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Connexion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --text: #1e293b; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; overflow: hidden; }
+        .bg-slider { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .bg-img.active { opacity: 1; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); z-index: 0; }
+        .container { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; height: 100%; }
+        .card { background: rgba(255, 255, 255, 0.95); padding: 40px 30px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 90%; max-width: 380px; text-align: center; }
+        .logo { font-size: 28px; font-weight: 600; color: var(--primary); margin-bottom: 5px; }
+        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 30px; }
+        .form-group { text-align: left; margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: 600; color: #94a3b8; margin-left: 5px; text-transform: uppercase; }
+        .input-box { display: flex; align-items: center; background: #f1f5f9; border-radius: 15px; border: 1px solid #e2e8f0; padding: 0 15px; }
+        .prefix { font-weight: 600; color: var(--text); margin-right: 10px; border-right: 1px solid #cbd5e1; padding-right: 10px; }
+        input { border: none; background: transparent; padding: 16px 0; width: 100%; font-family: inherit; font-size: 16px; outline: none; }
+        .btn-login { width: 100%; padding: 16px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 10px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="bg-slider">
+        <div class="bg-img active" style="background-image: url('IMG_3098.jpeg');"></div>
+        <div class="bg-img" style="background-image: url('IMG_3099.jpeg');"></div>
+        <div class="bg-img" style="background-image: url('IMG_3100.jpeg');"></div>
+    </div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="logo">Lumina Trust</div>
+            <div class="subtitle">Heureux de vous revoir</div>
+            <div class="form-group">
+                <label>Téléphone</label>
+                <div class="input-box">
+                    <span class="prefix">+243</span>
+                    <input type="tel" id="phone" placeholder="812345678" maxlength="9">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Code PIN</label>
+                <div class="input-box">
+                    <input type="password" id="pin" placeholder="••••••" maxlength="6">
+                </div>
+            </div>
+            <button class="btn-login" onclick="login()">Se connecter</button>
+            <div style="margin-top: 25px; font-size: 14px; color: #64748b;">Nouveau ? <a href="register.html" style="color:var(--primary); text-decoration:none; font-weight:600;">S'inscrire</a></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Slider images logic
+        let currentImg = 0;
+        const imgs = document.querySelectorAll('.bg-img');
+        setInterval(() => {
+            imgs[currentImg].classList.remove('active');
+            currentImg = (currentImg + 1) % imgs.length;
+            imgs[currentImg].classList.add('active');
+        }, 5000);
+
+        // FONCTION EXPORTÉE POUR LE BOUTON
+        window.login = async () => {
+            const rawPhone = document.getElementById('phone').value.trim();
+            const phone = "243" + rawPhone;
+            const pin = document.getElementById('pin').value.trim();
+
+            if(!rawPhone || !pin) return alert("Veuillez remplir tous les champs.");
+
+            try {
+                const userRef = ref(db, 'users/' + phone);
+                const snap = await get(userRef);
+
+                if(snap.exists()) {
+                    const userData = snap.val();
+                    if(userData.pin === pin) {
+                        localStorage.setItem('userPhone', phone);
+                        alert("Connexion réussie !");
+                        window.location.href = "dashboard.html";
+                    } else {
+                        alert("Code PIN incorrect.");
+                    }
+                } else {
+                    alert("Ce numéro n'existe pas. Veuillez vous inscrire.");
+                }
+            } catch (e) {
+                alert("Erreur de connexion.");
+            }
+        };
+    </script>
+</body>
+</html>
