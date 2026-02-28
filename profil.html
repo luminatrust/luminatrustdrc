@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --danger: #ff4757; --text: #1e293b; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: #f8faff; color: var(--text); padding-bottom: 100px; }
+
+        /* HEADER PROFIL */
+        .profile-header { background: linear-gradient(135deg, #1e293b, #2563eb); color: white; padding: 50px 20px; text-align: center; border-radius: 0 0 40px 40px; }
+        .avatar-circle { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 2px solid white; }
+        .user-id { background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; font-size: 12px; display: inline-block; margin-top: 5px; }
+
+        /* LISTE DES OPTIONS */
+        .menu-container { padding: 20px; margin-top: -20px; }
+        .menu-group { background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
+        
+        .menu-item { 
+            display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; 
+            border-bottom: 1px solid #f1f5f9; text-decoration: none; color: var(--text); transition: 0.3s;
+        }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:active { background: #f8faff; }
+        
+        .item-info { display: flex; align-items: center; gap: 15px; }
+        .icon-box { width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        
+        .logout-btn { color: var(--danger); font-weight: 600; cursor: pointer; }
+
+        /* NAV BASSE */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; padding: 12px 0; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; text-decoration: none; }
+        .nav-item.active { color: var(--primary); font-weight: 600; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-header">
+        <div class="avatar-circle">👤</div>
+        <div id="dispPhone" style="font-weight: 600; font-size: 18px;">Chargement...</div>
+        <div class="user-id" id="dispCode">ID: Lumina-XXXX</div>
+    </div>
+
+    <div class="menu-container">
+        <div class="menu-group">
+            <a href="transactions.html" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9;">📜</div>
+                    <span>Historique de transactions</span>
+                </div>
+                <span>❯</span>
+            </a>
+            <a href="recharge.html" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#f0fdf4; color:#22c55e;">💰</div>
+                    <span>Recharger mon solde</span>
+                </div>
+                <span>❯</span>
+            </a>
+        </div>
+
+        <div class="menu-group">
+            <div class="menu-item" onclick="alert('Fonction bientôt disponible')">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#fff7ed; color:#f97316;">🔑</div>
+                    <span>Changer mon code PIN</span>
+                </div>
+                <span>❯</span>
+            </a>
+            <a href="https://chat.whatsapp.com/L1UhdHu6CxF8fX3z5CkbsJ" class="menu-item">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#fdf2f8; color:#db2777;">🎧</div>
+                    <span>Support Client (WhatsApp)</span>
+                </div>
+                <span>❯</span>
+            </a>
+        </div>
+
+        <div class="menu-group">
+            <div class="menu-item logout-btn" onclick="logout()">
+                <div class="item-info">
+                    <div class="icon-box" style="background:#fef2f2; color:#ef4444;">🚪</div>
+                    <span>Déconnexion sécurisée</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item"><span class="nav-icon">🏠</span>Accueil</a>
+        <a href="produits.html" class="nav-item"><span class="nav-icon">📦</span>Produits</a>
+        <a href="equipe.html" class="nav-item"><span class="nav-icon">👥</span>Équipe</a>
+        <a href="profil.html" class="nav-item active"><span class="nav-icon">👤</span>Profil</a>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const userPhone = localStorage.getItem('userPhone');
+
+        if(userPhone) {
+            onValue(ref(db, 'users/' + userPhone), (snap) => {
+                const d = snap.val();
+                if(d) {
+                    document.getElementById('dispPhone').innerText = "+" + d.telephone;
+                    document.getElementById('dispCode').innerText = "ID: " + (d.mon_code || "Lumina-User");
+                }
+            });
+        } else {
+            window.location.href = "index.html";
+        }
+
+        window.logout = () => {
+            if(confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                localStorage.removeItem('userPhone');
+                window.location.href = "index.html";
+            }
+        };
+    </script>
+</body>
+</html>
