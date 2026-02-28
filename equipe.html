@@ -43,9 +43,9 @@
 
     <div class="level-section">
         <h3 style="font-size: 16px; margin-left: 10px; color: #64748b;">Détails des Niveaux</h3>
-        <div class="level-card"><div class="level-info"><div class="level-icon">L1</div><div><div style="font-weight:600;">Niveau Direct</div><div id="countL1">0</div></div></div><div class="com-percent">25%</div></div>
-        <div class="level-card"><div class="level-info"><div class="level-icon">L2</div><div><div style="font-weight:600;">Niveau Indirect</div><div id="countL2">0</div></div></div><div class="com-percent">3%</div></div>
-        <div class="level-card"><div class="level-info"><div class="level-icon">L3</div><div><div style="font-weight:600;">Niveau Tertiaire</div><div id="countL3">0</div></div></div><div class="com-percent">1%</div></div>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L1</div><div><div style="font-weight:600;">Niveau Direct</div><div id="countL1">0 membres</div></div></div><div class="com-percent">25%</div></div>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L2</div><div><div style="font-weight:600;">Niveau Indirect</div><div id="countL2">0 membres</div></div></div><div class="com-percent">3%</div></div>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L3</div><div><div style="font-weight:600;">Niveau Tertiaire</div><div id="countL3">0 membres</div></div></div><div class="com-percent">1%</div></div>
     </div>
 
     <nav class="bottom-nav">
@@ -63,6 +63,7 @@
         if (!userPhone) {
             document.getElementById('myCode').innerText = "Non connecté";
         } else {
+            // Récupérer le profil utilisateur
             onValue(ref(db, 'users/' + userPhone), (snap) => {
                 const data = snap.val();
                 if (data) {
@@ -70,6 +71,7 @@
                     document.getElementById('totalCom').innerText = (data.total_commissions || 0).toLocaleString() + " FC";
                     
                     const myCode = data.mon_code;
+                    // Récupérer tout le réseau pour calcul
                     onValue(ref(db, 'users'), (snapUsers) => {
                         const users = Object.values(snapUsers.val() || {});
                         const l1 = users.filter(u => u.parraine_par === myCode);
@@ -83,19 +85,21 @@
                         document.getElementById('countL3').innerText = l3.length + " membres";
                         document.getElementById('totalTeam').innerText = l1.length + l2.length + l3.length;
                     });
+                } else {
+                    document.getElementById('myCode').innerText = "Erreur compte";
                 }
             });
         }
 
         window.copyRef = () => {
             const code = document.getElementById('myCode').innerText;
-            if(code === "Chargement..." || code === "Non connecté") return;
+            if(code === "Chargement..." || code === "Non connecté" || code === "NON-DEFINI") return;
             
-            // Construit le lien vers votre page d'inscription
-            const link = window.location.origin + "/register.html?ref=" + code;
+            // Lien vers votre projet GitHub Pages
+            const link = "https://luminatrust.github.io/luminatrustdrc/register.html?ref=" + code;
             
             navigator.clipboard.writeText(link).then(() => {
-                alert("Lien de parrainage copié : " + link);
+                alert("Lien de parrainage copié !\n" + link);
             });
         };
     </script>
