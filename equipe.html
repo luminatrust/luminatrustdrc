@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Mon Réseau</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --accent: #2ecc71; --bg: #f8faff; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); padding-bottom: 100px; }
+        .team-header { background: var(--primary); color: white; padding: 40px 20px; border-radius: 0 0 40px 40px; text-align: center; }
+        .referral-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 20px; margin-top: 20px; border: 1px dashed rgba(255,255,255,0.3); cursor: pointer; }
+        .ref-code { font-size: 20px; font-weight: 600; letter-spacing: 2px; }
+        .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; margin-top: -30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-align: center; }
+        .stat-val { font-size: 18px; font-weight: 600; color: var(--primary); }
+        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 5px; }
+        .level-section { padding: 0 20px; }
+        .level-card { background: white; margin-bottom: 15px; padding: 15px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eef2f7; }
+        .level-info { display: flex; align-items: center; gap: 15px; }
+        .level-icon { width: 45px; height: 45px; border-radius: 12px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 600; }
+        .com-percent { background: var(--accent); color: white; padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; padding: 12px 0; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; text-decoration: none; }
+        .nav-item.active { color: var(--primary); font-weight: 600; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="team-header">
+        <h1 style="margin:0; font-size: 22px;">Votre Réseau Lumina</h1>
+        <div class="referral-box" onclick="copyRef()">
+            <div style="font-size: 10px; opacity: 0.7;">VOTRE CODE</div>
+            <div class="ref-code" id="myCode">Chargement...</div>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card"><div class="stat-val" id="totalTeam">0</div><div class="stat-label">Partenaires</div></div>
+        <div class="stat-card"><div class="stat-val" id="totalCom" style="color:var(--accent)">0 FC</div><div class="stat-label">Commissions</div></div>
+    </div>
+
+    <div class="level-section">
+        <h3 style="font-size: 16px; margin-left: 10px; color: #64748b;">Détails des Niveaux</h3>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L1</div><div><div style="font-weight:600;">Niveau Direct</div><div id="countL1">0</div></div></div><div class="com-percent">25%</div></div>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L2</div><div><div style="font-weight:600;">Niveau Indirect</div><div id="countL2">0</div></div></div><div class="com-percent">3%</div></div>
+        <div class="level-card"><div class="level-info"><div class="level-icon">L3</div><div><div style="font-weight:600;">Niveau Tertiaire</div><div id="countL3">0</div></div></div><div class="com-percent">1%</div></div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item">🏠 Accueil</a>
+        <a href="equipe.html" class="nav-item active">👥 Équipe</a>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const db = getDatabase(initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" }));
+        const userPhone = localStorage.getItem('userPhone');
+
+        if (!userPhone) {
+            document.getElementById('myCode').innerText = "Non connecté";
+        } else {
+            // 1. Récupérer mon profil
+            onValue(ref(db, 'users/' + userPhone), (snap) => {
+                const data = snap.val();
+                if (data) {
+                    document.getElementById('myCode').innerText = data.mon_code || "NON-DEFINI";
+                    document.getElementById('totalCom').innerText = (data.total_commissions || 0).toLocaleString() + " FC";
+                    
+                    // 2. Une fois le code connu, calculer le réseau
+                    const myCode = data.mon_code;
+                    onValue(ref(db, 'users'), (snapUsers) => {
+                        const users = Object.values(snapUsers.val() || {});
+                        const l1 = users.filter(u => u.parraine_par === myCode);
+                        const l1Codes = l1.map(u => u.mon_code);
+                        const l2 = users.filter(u => l1Codes.includes(u.parraine_par));
+                        const l2Codes = l2.map(u => u.mon_code);
+                        const l3 = users.filter(u => l2Codes.includes(u.parraine_par));
+
+                        document.getElementById('countL1').innerText = l1.length + " membres";
+                        document.getElementById('countL2').innerText = l2.length + " membres";
+                        document.getElementById('countL3').innerText = l3.length + " membres";
+                        document.getElementById('totalTeam').innerText = l1.length + l2.length + l3.length;
+                    });
+                }
+            });
+        }
+
+        window.copyRef = () => {
+            const code = document.getElementById('myCode').innerText;
+            navigator.clipboard.writeText(code);
+            alert("Code copié : " + code);
+        };
+    </script>
+</body>
+</html>
