@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Inscription</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --text: #1e293b; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Outfit', sans-serif; overflow: hidden; }
+        .bg-slider { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .bg-img { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .bg-img.active { opacity: 1; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); z-index: 0; }
+        .container { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; height: 100%; }
+        .card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 90%; max-width: 380px; text-align: center; }
+        .logo { font-size: 26px; font-weight: 600; color: var(--primary); margin-bottom: 5px; }
+        .subtitle { color: #64748b; font-size: 13px; margin-bottom: 25px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { font-size: 11px; font-weight: 600; color: #94a3b8; margin-left: 5px; text-transform: uppercase; }
+        .input-box { display: flex; align-items: center; background: #f1f5f9; border-radius: 15px; border: 1px solid #e2e8f0; padding: 0 15px; }
+        .prefix { font-weight: 600; color: var(--text); margin-right: 10px; border-right: 1px solid #cbd5e1; padding-right: 10px; }
+        input { border: none; background: transparent; padding: 15px 0; width: 100%; font-family: inherit; font-size: 15px; outline: none; }
+        .btn-reg { width: 100%; padding: 16px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="bg-slider">
+        <div class="bg-img active" style="background-image: url('IMG_3098.jpeg');"></div>
+        <div class="bg-img" style="background-image: url('IMG_3099.jpeg');"></div>
+        <div class="bg-img" style="background-image: url('IMG_3100.jpeg');"></div>
+    </div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="logo">Lumina Trust</div>
+            <div class="subtitle">Créez votre compte investisseur</div>
+            <div class="form-group"><label>Téléphone</label><div class="input-box"><span class="prefix">+243</span><input type="tel" id="phone" placeholder="812345678" maxlength="9"></div></div>
+            <div class="form-group"><label>PIN (6 chiffres)</label><div class="input-box"><input type="password" id="pin" placeholder="••••••" maxlength="6"></div></div>
+            <div class="form-group"><label>Parrainage</label><div class="input-box"><input type="text" id="referral" placeholder="Optionnel"></div></div>
+            <button class="btn-reg" onclick="register()">S'inscrire</button>
+            <p style="font-size: 13px; margin-top: 20px;">Déjà membre ? <a href="index.html" style="color:var(--primary); text-decoration:none; font-weight:600;">Se connecter</a></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Slider images logic
+        let currentImg = 0;
+        const imgs = document.querySelectorAll('.bg-img');
+        setInterval(() => {
+            imgs[currentImg].classList.remove('active');
+            currentImg = (currentImg + 1) % imgs.length;
+            imgs[currentImg].classList.add('active');
+        }, 5000);
+
+        // FONCTION EXPORTÉE POUR LE BOUTON
+        window.register = async () => {
+            const rawPhone = document.getElementById('phone').value.trim();
+            const phone = "243" + rawPhone;
+            const pin = document.getElementById('pin').value.trim();
+            const refCode = document.getElementById('referral').value.trim();
+
+            if(rawPhone.length < 9 || pin.length !== 6) return alert("Numéro (9 chiffres) ou PIN (6 chiffres) invalide.");
+
+            try {
+                const userRef = ref(db, 'users/' + phone);
+                const snap = await get(userRef);
+                if(snap.exists()) return alert("Ce numéro est déjà inscrit.");
+
+                await set(userRef, {
+                    telephone: phone,
+                    pin: pin,
+                    solde: 0,
+                    total_commissions: 0,
+                    parraine_par: refCode || "DIRECT",
+                    mon_code: "LUM-" + Math.floor(10000 + Math.random() * 90000),
+                    date_creation: new Date().toISOString()
+                });
+
+                alert("Inscription réussie ! Connectez-vous maintenant.");
+                window.location.href = "index.html";
+            } catch (e) {
+                alert("Erreur lors de l'inscription.");
+            }
+        };
+    </script>
+</body>
+</html>
