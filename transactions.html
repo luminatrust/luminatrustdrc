@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina Trust - Transactions</title>
+    <title>Lumina Trust - Historique</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; font-family: 'Outfit', sans-serif; background: #f8faff; padding-bottom: 80px; }
         .header { background: #2563eb; color: white; padding: 40px 20px; border-radius: 0 0 40px 40px; text-align: center; }
         .container { padding: 20px; }
         .card { background: white; padding: 18px 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .type { font-weight: 600; font-size: 15px; }
+        .type-label { font-weight: 600; font-size: 15px; }
     </style>
 </head>
 <body>
-    <div class="header"><h1>Transactions</h1></div>
+    <div class="header"><h1>Historique</h1></div>
     <div class="container" id="transList">Chargement...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Initialisation propre
         const app = initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" });
         const db = getDatabase(app);
         const userPhone = localStorage.getItem('userPhone');
@@ -32,15 +33,31 @@
             list.innerHTML = "";
             if(!snap.exists()) return list.innerHTML = "<p style='text-align:center;'>Aucune transaction.</p>";
             
-            snap.forEach((child) => {
-                const tr = child.val();
+            // On récupère toutes les données dans un tableau
+            const transactions = [];
+            snap.forEach((child) => { transactions.push(child.val()); });
+            
+            // Inversion pour afficher les plus récentes en haut
+            transactions.reverse();
+
+            transactions.forEach((tr) => {
+                const isRetrait = tr.type === 'Retrait';
+                const couleur = isRetrait ? '#ff4757' : '#22c55e';
+                const signe = isRetrait ? '-' : '+';
+                const fleche = isRetrait ? '🔽' : '🔼';
+
                 list.innerHTML += `
                     <div class="card">
-                        <div>
-                            <div class="type" style="color:${tr.type === 'Retrait' ? '#ff4757' : '#22c55e'}">${tr.type}</div>
-                            <small style="color:#94a3b8;">${tr.date}</small>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div style="font-size: 20px;">${fleche}</div>
+                            <div>
+                                <div class="type-label" style="color:${couleur}">${tr.type}</div>
+                                <small style="color:#94a3b8;">${tr.date}</small>
+                            </div>
                         </div>
-                        <div style="font-weight:600;">${tr.montant.toLocaleString()} FC</div>
+                        <div style="font-weight:700; color:${couleur};">
+                            ${signe}${Number(tr.montant).toLocaleString()} FC
+                        </div>
                     </div>`;
             });
         });
