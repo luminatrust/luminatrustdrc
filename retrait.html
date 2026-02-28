@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Trust - Retrait</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --accent: #2ecc71; --bg: #f8faff; --danger: #ef4444; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); padding-bottom: 100px; }
+        
+        .header { background: var(--primary); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; }
+        .balance-box { background: white; margin: -20px 20px 20px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-align: center; }
+        .balance-val { font-size: 24px; font-weight: 600; color: var(--primary); }
+
+        .form-card { background: white; margin: 20px; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #eef2f7; background: #f1f5f9; font-family: inherit; box-sizing: border-box; outline: none; }
+        
+        .btn-send { width: 100%; padding: 18px; border: none; border-radius: 15px; background: var(--primary); color: white; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
+        .btn-send:active { transform: scale(0.95); }
+
+        .info-panel { background: #f0f7ff; color: #1e40af; padding: 15px; border-radius: 15px; font-size: 12px; margin-top: 20px; line-height: 1.6; border: 1px solid #dbeafe; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2 style="margin:0;">Portefeuille Lumina</h2>
+        <p style="font-size: 13px; opacity: 0.8;">Retrait de vos fonds</p>
+    </div>
+
+    <div class="balance-box">
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 5px;">VOTRE SOLDE ACTUEL</div>
+        <div class="balance-val" id="mySolde">0 FC</div>
+    </div>
+
+    <div class="form-card">
+        <div class="input-group">
+            <label>Montant à retirer (Minimum 7.000 FC)</label>
+            <input type="number" id="amount" placeholder="Ex: 10000" oninput="calculerFrais()">
+            <div id="fraisMsg" style="font-size: 11px; color: var(--danger); margin-top: 5px; font-weight: 600;">Frais de maintenance (15%): 0 FC</div>
+        </div>
+
+        <div class="input-group">
+            <label>Réseau de paiement</label>
+            <select id="method">
+                <option value="M-Pesa">M-Pesa (Vodacom)</option>
+                <option value="AirtelMoney">Airtel Money</option>
+                <option value="OrangeMoney">Orange Money</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Numéro de téléphone (RDC)</label>
+            <input type="tel" id="payPhone" placeholder="08XXXXXXXX" maxlength="10">
+        </div>
+
+        <button class="btn-send" onclick="validerRetrait()">Effectuer le retrait</button>
+        
+        <div class="info-panel">
+            💎 <b>Conditions Lumina Trust :</b><br>
+            • <b>Horaires :</b> 09h00 à 17h00 uniquement.<br>
+            • <b>Fréquence :</b> 1 seul retrait autorisé par 24h.<br>
+            • <b>Frais :</b> 15% appliqués sur le montant brut.
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, push, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const userPhone = localStorage.getItem('userPhone');
+        let currentBalance = 0;
+        let lastWithdrawDate = "";
+
+        // Récupération des données utilisateur
+        if(userPhone) {
+            onValue(ref(db, 'users/' + userPhone), (snap) => {
+                const d = snap.val();
+                if(d) {
+                    currentBalance = d.solde || 0;
+                    lastWithdrawDate = d.dernier_retrait || "";
+                    document.getElementById('mySolde').innerText = currentBalance.toLocaleString() + " FC";
+                }
+            });
+        }
+
+        // Calculateur de frais dynamique
+        window.calculerFrais = () => {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const frais = amount * 0.15;
+            const net = amount - frais;
+            if(amount > 0) {
+                document.getElementById('fraisMsg').innerText = `Frais (15%): ${frais.toLocaleString()} FC | Net : ${net.toLocaleString()} FC`;
+            } else {
+                document.getElementById('fraisMsg').innerText = "Frais de maintenance (15%): 0 FC";
+            }
+        };
+
+        // --- FONCTION DE VALIDATION PRINCIPALE ---
+        window.validerRetrait = async () => {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const method = document.getElementById('method').value;
+            const payPhone = document.getElementById('payPhone').value;
+            
+            // 1. Vérification de l'heure
+            const now = new Date();
+            const hour = now.getHours();
+            if (hour < 9 || hour >= 17) {
+                return alert("🛑 ACCÈS REFUSÉ\nLes retraits sont ouverts uniquement entre 09h00 et 17h00. Veuillez revenir demain matin.");
+            }
+
+            // 2. Vérification du nombre de retrait (1 par jour)
+            const today = now.toDateString();
+            if(lastWithdrawDate === today) {
+                return alert("🛑 LIMITE ATTEINTE\nVous avez déjà effectué un retrait aujourd'hui. Lumina Trust autorise 1 retrait par 24h.");
+            }
+
+            // 3. Vérification du montant minimum (7000 FC)
+            if(!amount || amount < 7000) {
+                return alert("🛑 MONTANT INSUFFISANT\nLe montant minimum de retrait est de 7.000 FC.");
+            }
+
+            // 4. Vérification du solde
+            if(amount > currentBalance) {
+                return alert("🛑 SOLDE INSUFFISANT\nVotre solde actuel ne permet pas de retirer ce montant.");
+            }
+
+            // 5. Vérification du numéro
+            if(payPhone.length < 10) {
+                return alert("🛑 NUMÉRO INVALIDE\nVeuillez entrer un numéro de réception correct (10 chiffres).");
+            }
+
+            // --- PROCESSUS FINAL ---
+            const frais = amount * 0.15;
+            const montantNet = amount - frais;
+
+            if(confirm(`💰 CONFIRMATION DE RETRAIT\n\nMontant Brut : ${amount.toLocaleString()} FC\nFrais (15%) : ${frais.toLocaleString()} FC\nMontant Net : ${montantNet.toLocaleString()} FC\nDestination : ${method} (${payPhone})\n\nConfirmez-vous l'envoi ?`)) {
+                
+                try {
+                    // Déduire le solde et marquer la date
+                    await update(ref(db, 'users/' + userPhone), { 
+                        solde: currentBalance - amount,
+                        dernier_retrait: today 
+                    });
+
+                    // Envoyer la requête à l'administration
+                    const withdrawRef = ref(db, 'withdrawals');
+                    const newReq = push(withdrawRef);
+                    await set(newReq, {
+                        user: userPhone,
+                        montant_brut: amount,
+                        frais: frais,
+                        montant_net: montantNet,
+                        methode: method,
+                        receveur: payPhone,
+                        statut: "EN_ATTENTE",
+                        date: new Date().toISOString()
+                    });
+
+                    alert("✅ SUCCÈS\nVotre demande de retrait a été transmise à la direction. Vous recevrez vos fonds sous 24h.");
+                    window.location.href = "dashboard.html";
+                } catch (e) {
+                    alert("Erreur système. Veuillez réessayer plus tard.");
+                }
+            }
+        };
+    </script>
+</body>
+</html>
