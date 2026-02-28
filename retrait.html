@@ -77,97 +77,63 @@
 
         const userPhone = localStorage.getItem('userPhone');
         let currentBalance = 0;
-        let lastWithdrawDate = "";
 
-        // Récupération des données utilisateur
         if(userPhone) {
             onValue(ref(db, 'users/' + userPhone), (snap) => {
                 const d = snap.val();
                 if(d) {
                     currentBalance = d.solde || 0;
-                    lastWithdrawDate = d.dernier_retrait || "";
                     document.getElementById('mySolde').innerText = currentBalance.toLocaleString() + " FC";
                 }
             });
         }
 
-        // Calculateur de frais dynamique
         window.calculerFrais = () => {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const frais = amount * 0.15;
             const net = amount - frais;
-            if(amount > 0) {
-                document.getElementById('fraisMsg').innerText = `Frais (15%): ${frais.toLocaleString()} FC | Net : ${net.toLocaleString()} FC`;
-            } else {
-                document.getElementById('fraisMsg').innerText = "Frais de maintenance (15%): 0 FC";
-            }
+            document.getElementById('fraisMsg').innerText = amount > 0 ? `Frais (15%): ${frais.toLocaleString()} FC | Net : ${net.toLocaleString()} FC` : "Frais de maintenance (15%): 0 FC";
         };
 
-        // --- FONCTION DE VALIDATION PRINCIPALE ---
         window.validerRetrait = async () => {
             const amount = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const payPhone = document.getElementById('payPhone').value;
             
-            // 1. Vérification de l'heure
             const now = new Date();
-            const hour = now.getHours();
-            if (hour < 9 || hour >= 17) {
-                return alert("🛑 ACCÈS REFUSÉ\nLes retraits sont ouverts uniquement entre 09h00 et 17h00. Veuillez revenir demain matin.");
-            }
+            if (now.getHours() < 9 || now.getHours() >= 17) return alert("🛑 Retraits ouverts de 09h00 à 17h00.");
+            if(!amount || amount < 7000) return alert("Montant min : 7.000 FC.");
+            if(amount > currentBalance) return alert("Solde insuffisant.");
+            if(payPhone.length < 10) return alert("Numéro invalide.");
 
-            // 2. Vérification du nombre de retrait (1 par jour)
-            const today = now.toDateString();
-            if(lastWithdrawDate === today) {
-                return alert("🛑 LIMITE ATTEINTE\nVous avez déjà effectué un retrait aujourd'hui. Lumina Trust autorise 1 retrait par 24h.");
-            }
-
-            // 3. Vérification du montant minimum (7000 FC)
-            if(!amount || amount < 7000) {
-                return alert("🛑 MONTANT INSUFFISANT\nLe montant minimum de retrait est de 7.000 FC.");
-            }
-
-            // 4. Vérification du solde
-            if(amount > currentBalance) {
-                return alert("🛑 SOLDE INSUFFISANT\nVotre solde actuel ne permet pas de retirer ce montant.");
-            }
-
-            // 5. Vérification du numéro
-            if(payPhone.length < 10) {
-                return alert("🛑 NUMÉRO INVALIDE\nVeuillez entrer un numéro de réception correct (10 chiffres).");
-            }
-
-            // --- PROCESSUS FINAL ---
             const frais = amount * 0.15;
             const montantNet = amount - frais;
+            const dateStr = new Date().toISOString();
 
-            if(confirm(`💰 CONFIRMATION DE RETRAIT\n\nMontant Brut : ${amount.toLocaleString()} FC\nFrais (15%) : ${frais.toLocaleString()} FC\nMontant Net : ${montantNet.toLocaleString()} FC\nDestination : ${method} (${payPhone})\n\nConfirmez-vous l'envoi ?`)) {
-                
+            if(confirm(`Confirmer le retrait de ${montantNet.toLocaleString()} FC net ?`)) {
                 try {
-                    // Déduire le solde et marquer la date
-                    await update(ref(db, 'users/' + userPhone), { 
-                        solde: currentBalance - amount,
-                        dernier_retrait: today 
-                    });
+                    // 1. Déduire le solde
+                    await update(ref(db, 'users/' + userPhone), { solde: currentBalance - amount });
 
-                    // Envoyer la requête à l'administration
-                    const withdrawRef = ref(db, 'withdrawals');
-                    const newReq = push(withdrawRef);
-                    await set(newReq, {
+                    // 2. Envoi vers l'Admin (pour traitement)
+                    const reqData = {
                         user: userPhone,
                         montant_brut: amount,
-                        frais: frais,
                         montant_net: montantNet,
                         methode: method,
                         receveur: payPhone,
                         statut: "EN_ATTENTE",
-                        date: new Date().toISOString()
-                    });
+                        date: dateStr
+                    };
+                    await push(ref(db, 'withdrawals'), reqData);
 
-                    alert("✅ SUCCÈS\nVotre demande de retrait a été transmise à la direction. Vous recevrez vos fonds sous 24h.");
+                    // 3. Envoi vers l'historique utilisateur (pour suivi)
+                    await push(ref(db, 'users/' + userPhone + '/historique_retraits'), reqData);
+
+                    alert("✅ Demande envoyée !");
                     window.location.href = "dashboard.html";
                 } catch (e) {
-                    alert("Erreur système. Veuillez réessayer plus tard.");
+                    alert("Erreur serveur.");
                 }
             }
         };
