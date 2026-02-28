@@ -43,8 +43,7 @@
     <h2>Dépôt Lumina 3</h2>
 
     <div class="net-title">1. MONTANT DU VIP À RECHARGER</div>
-    <div class="vip-grid" id="gridVip">
-        </div>
+    <div class="vip-grid" id="gridVip"></div>
 
     <div class="net-title">2. RÉSEAU DE TRANSFERT</div>
     <div class="net-group">
@@ -74,13 +73,10 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const db = getDatabase(initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" }));
 
-    // VOS PRIX EXACTS
     const mesVips = [
         {n: "VIP 1", p: 30000}, {n: "VIP 2", p: 65000}, {n: "VIP 3", p: 120000},
         {n: "VIP 4", p: 250000}, {n: "VIP 5", p: 400000}, {n: "VIP 6", p: 565000},
@@ -90,7 +86,6 @@
 
     let selectPrice = 0; let selectVip = ""; let selectNet = "";
 
-    // Afficher les carreaux
     const grid = document.getElementById('gridVip');
     mesVips.forEach(v => {
         const d = document.createElement('div');
@@ -104,7 +99,6 @@
         grid.appendChild(d);
     });
 
-    // Sélection réseau Agent
     window.setNet = (el, net, phone) => {
         document.querySelectorAll('.net-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
@@ -119,10 +113,13 @@
         const sender = document.getElementById('senderPhone').value;
         const user = localStorage.getItem('userPhone');
 
-        if(!selectPrice || !selectNet || !tid || !sender) return alert("Erreur : Sélectionnez un VIP, un réseau et remplissez les champs !");
+        if(!selectPrice || !selectNet || !tid || !sender) {
+            return alert("Erreur : Sélectionnez un VIP, un réseau et remplissez les champs !");
+        }
 
-        await set(push(ref(db, 'deposits')), {
-            user_phone: user,
+        // Envoi direct à l'Admin
+        await push(ref(db, 'demandes/recharges'), {
+            phone: user,
             vip_name: selectVip,
             montant: selectPrice,
             reseau: selectNet,
@@ -132,7 +129,7 @@
             date: new Date().toLocaleString()
         });
 
-        alert("Demande envoyée ! Attendez la confirmation de l'admin.");
+        alert("Demande envoyée ! Attendez la confirmation.");
         window.location.href = "dashboard.html";
     };
 </script>
