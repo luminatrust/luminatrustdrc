@@ -86,7 +86,6 @@
     const container = document.getElementById('vip-list');
     const userPhone = localStorage.getItem('userPhone');
 
-    // Affichage solde temps réel
     if(userPhone) {
         onValue(ref(db, 'users/' + userPhone), (snap) => {
             if(snap.exists()) {
@@ -124,6 +123,8 @@
 
         if(confirm(`Investir ${p.price} FC dans le ${p.name} ?`)) {
             await update(uRef, { solde: user.solde - p.price });
+            
+            // Enregistrement dans les achats (historique)
             const purchaseRef = ref(db, `users/${userPhone}/achats`);
             await push(purchaseRef, {
                 produitId: p.id,
@@ -131,6 +132,14 @@
                 gainJour: p.daily,
                 dateAchat: new Date().toISOString(),
                 expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            });
+
+            // MODIFICATION : Enregistrement dans "mes_produits" pour l'affichage dans la page dédiée
+            const prodRef = ref(db, `mes_produits/${userPhone}`);
+            await push(prodRef, {
+                nom_produit: p.name,
+                revenu_journalier: p.daily,
+                date_achat: new Date().toLocaleDateString()
             });
 
             distribuerCommissions(user.parraine_par, p.price);
