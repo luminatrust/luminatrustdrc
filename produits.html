@@ -122,46 +122,63 @@
         if(!user || user.solde < p.price) return alert("Solde insuffisant pour ce VIP.");
 
         if(confirm(`Investir ${p.price} FC dans le ${p.name} ?`)) {
+            // 1. Mise à jour solde
             await update(uRef, { solde: user.solde - p.price });
             
-            // Enregistrement dans les achats (historique)
-            const purchaseRef = ref(db, `users/${userPhone}/achats`);
-            await push(purchaseRef, {
+            // 2. Enregistrement achat historique
+            await push(ref(db, `users/${userPhone}/achats`), {
                 produitId: p.id,
                 nom: p.name,
                 gainJour: p.daily,
-                dateAchat: new Date().toISOString(),
-                expire: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                dateAchat: new Date().toISOString()
             });
 
-            // MODIFICATION : Enregistrement dans "mes_produits" pour l'affichage dans la page dédiée
-            const prodRef = ref(db, `mes_produits/${userPhone}`);
-            await push(prodRef, {
+            // 3. Enregistrement dans "mes_produits" pour affichage
+            await push(ref(db, `mes_produits/${userPhone}`), {
                 nom_produit: p.name,
                 revenu_journalier: p.daily,
                 date_achat: new Date().toLocaleDateString()
             });
 
+            // 4. Distribution des commissions
             distribuerCommissions(user.parraine_par, p.price);
-            alert("Investissement réussi ! Vos revenus commenceront dans 24h.");
+
+            alert("Investissement réussi !");
         }
     };
 
     async function distribuerCommissions(parrainPhone, montant) {
-        const taux = [0.25, 0.03, 0.01];
+        if(!parrainPhone || parrainPhone === "DIRECT") return;
+        
+        const taux = [0.25, 0.03, 0.01]; // 25%, 3%, 1%
         let currentParrain = parrainPhone;
 
         for(let i=0; i<3; i++) {
             if(!currentParrain || currentParrain === "DIRECT") break;
+            
             const pRef = ref(db, 'users/' + currentParrain);
             const pSnap = await get(pRef);
+            
             if(pSnap.exists()) {
+                const pData = pSnap.val();
                 const gain = montant * taux[i];
+                
+                // Mise à jour du parrain
                 await update(pRef, { 
-                    solde: (pSnap.val().solde || 0) + gain,
-                    total_commissions: (pSnap.val().total_commissions || 0) + gain
+                    solde: (Number(pData.solde) || 0) + gain,
+                    total_commissions: (Number(pData.total_commissions) || 0) + gain
                 });
-                currentParrain = pSnap.val().parraine_par;
+
+                // Historique pour le parrain
+                await push(ref(db, `users/${currentParrain}/historique_transactions`), {
+                    type: "Commission",
+                    montant: gain,
+                    statut: "SUCCÈS",
+                    date: new Date().toLocaleString(),
+                    details: "Commission niveau " + (i + 1)
+                });
+                
+                currentParrain = pData.parraine_par;
             } else break;
         }
     }
