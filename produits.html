@@ -34,7 +34,6 @@
             border-radius: 15px; margin-top: 20px; font-weight: 600; cursor: pointer;
         }
 
-        /* Nav Basse */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #eee; z-index: 100; }
         .nav-item { flex: 1; text-align: center; font-size: 11px; color: #94a3b8; text-decoration: none; }
         .active { color: var(--primary); font-weight: 600; }
@@ -122,10 +121,8 @@
         if(!user || user.solde < p.price) return alert("Solde insuffisant pour ce VIP.");
 
         if(confirm(`Investir ${p.price} FC dans le ${p.name} ?`)) {
-            // 1. Mise à jour solde
             await update(uRef, { solde: user.solde - p.price });
             
-            // 2. Enregistrement achat historique
             await push(ref(db, `users/${userPhone}/achats`), {
                 produitId: p.id,
                 nom: p.name,
@@ -133,14 +130,14 @@
                 dateAchat: new Date().toISOString()
             });
 
-            // 3. Enregistrement dans "mes_produits" pour affichage
             await push(ref(db, `mes_produits/${userPhone}`), {
                 nom_produit: p.name,
                 revenu_journalier: p.daily,
                 date_achat: new Date().toLocaleDateString()
             });
 
-            // 4. Distribution des commissions
+            // DEBUG : Afficher le parrain trouvé
+            console.log("Parrain initial:", user.parraine_par);
             distribuerCommissions(user.parraine_par, p.price);
 
             alert("Investissement réussi !");
@@ -148,13 +145,18 @@
     };
 
     async function distribuerCommissions(parrainPhone, montant) {
-        if(!parrainPhone || parrainPhone === "DIRECT") return;
+        if(!parrainPhone || parrainPhone === "DIRECT") {
+            console.log("Pas de parrain à rétribuer.");
+            return;
+        }
         
         const taux = [0.25, 0.03, 0.01]; // 25%, 3%, 1%
         let currentParrain = parrainPhone;
 
         for(let i=0; i<3; i++) {
             if(!currentParrain || currentParrain === "DIRECT") break;
+            
+            console.log("Traitement niveau " + (i+1) + " pour : " + currentParrain);
             
             const pRef = ref(db, 'users/' + currentParrain);
             const pSnap = await get(pRef);
@@ -163,13 +165,11 @@
                 const pData = pSnap.val();
                 const gain = montant * taux[i];
                 
-                // Mise à jour du parrain
                 await update(pRef, { 
                     solde: (Number(pData.solde) || 0) + gain,
                     total_commissions: (Number(pData.total_commissions) || 0) + gain
                 });
 
-                // Historique pour le parrain
                 await push(ref(db, `users/${currentParrain}/historique_transactions`), {
                     type: "Commission",
                     montant: gain,
@@ -178,8 +178,12 @@
                     details: "Commission niveau " + (i + 1)
                 });
                 
+                // On passe au parrain suivant
                 currentParrain = pData.parraine_par;
-            } else break;
+            } else {
+                console.log("Parrain non trouvé dans la base : " + currentParrain);
+                break;
+            }
         }
     }
 </script>
