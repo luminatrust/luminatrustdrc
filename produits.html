@@ -61,7 +61,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, update, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
     const app = initializeApp(firebaseConfig);
@@ -136,27 +136,19 @@
                 date_achat: new Date().toLocaleDateString()
             });
 
-            // DEBUG : Afficher le parrain trouvé
-            console.log("Parrain initial:", user.parraine_par);
             distribuerCommissions(user.parraine_par, p.price);
-
             alert("Investissement réussi !");
         }
     };
 
     async function distribuerCommissions(parrainPhone, montant) {
-        if(!parrainPhone || parrainPhone === "DIRECT") {
-            console.log("Pas de parrain à rétribuer.");
-            return;
-        }
+        if(!parrainPhone || parrainPhone === "DIRECT") return;
         
         const taux = [0.25, 0.03, 0.01]; // 25%, 3%, 1%
-        let currentParrain = parrainPhone;
+        let currentParrain = String(parrainPhone).trim();
 
         for(let i=0; i<3; i++) {
-            if(!currentParrain || currentParrain === "DIRECT") break;
-            
-            console.log("Traitement niveau " + (i+1) + " pour : " + currentParrain);
+            if(!currentParrain || currentParrain === "DIRECT" || currentParrain === "undefined") break;
             
             const pRef = ref(db, 'users/' + currentParrain);
             const pSnap = await get(pRef);
@@ -178,10 +170,8 @@
                     details: "Commission niveau " + (i + 1)
                 });
                 
-                // On passe au parrain suivant
-                currentParrain = pData.parraine_par;
+                currentParrain = pData.parraine_par ? String(pData.parraine_par).trim() : null;
             } else {
-                console.log("Parrain non trouvé dans la base : " + currentParrain);
                 break;
             }
         }
