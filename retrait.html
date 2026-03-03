@@ -69,7 +69,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, push, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig);
@@ -112,28 +112,28 @@
 
             if(confirm(`Confirmer le retrait de ${montantNet.toLocaleString()} FC net ?`)) {
                 try {
-                    // 1. Déduire le solde
+                    // 1. Déduire le solde utilisateur
                     await update(ref(db, 'users/' + userPhone), { solde: currentBalance - amount });
 
-                    // 2. Envoi vers l'Admin (pour traitement)
+                    // 2. Envoi vers l'Admin (corrigé pour être lu par admin.html)
                     const reqData = {
-                        user: userPhone,
-                        montant_brut: amount,
-                        montant_net: montantNet,
+                        phone: userPhone,
+                        montant: amount,
                         methode: method,
                         receveur: payPhone,
                         statut: "EN_ATTENTE",
                         date: dateStr
                     };
-                    await push(ref(db, 'withdrawals'), reqData);
+                    // IMPORTANT: Ce chemin correspond à ce que l'admin écoute
+                    await push(ref(db, 'demandes/retraits'), reqData);
 
-                    // 3. Envoi vers l'historique utilisateur (pour suivi)
+                    // 3. Envoi vers l'historique utilisateur
                     await push(ref(db, 'users/' + userPhone + '/historique_retraits'), reqData);
 
                     alert("✅ Demande envoyée !");
                     window.location.href = "dashboard.html";
                 } catch (e) {
-                    alert("Erreur serveur.");
+                    alert("Erreur serveur : " + e.message);
                 }
             }
         };
