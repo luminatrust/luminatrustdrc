@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina 3 - Recharge VIP</title>
+    <title>Lumina Trust - Recharge VIP</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 15px; color: #333; }
         .container { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -40,7 +40,7 @@
 <body>
 
 <div class="container">
-    <h2>Dépôt Lumina 3</h2>
+    <h2>Dépôt Lumina Trust</h2>
 
     <div class="net-title">1. MONTANT DU VIP À RECHARGER</div>
     <div class="vip-grid" id="gridVip"></div>
@@ -75,7 +75,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const db = getDatabase(initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" }));
+    // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
+    const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
 
     const mesVips = [
         {n: "VIP 1", p: 30000}, {n: "VIP 2", p: 65000}, {n: "VIP 3", p: 120000},
@@ -118,15 +119,15 @@
         }
 
         // Envoi direct à l'Admin
-        await push(ref(db, 'demandes/recharges'), {
+        await push(ref(db, 'recharges'), {
             phone: user,
             vip_name: selectVip,
-            montant: selectPrice,
+            amount: selectPrice,
             reseau: selectNet,
             id_transaction: tid,
             numero_expediteur: sender,
             statut: "EN_ATTENTE",
-            date: new Date().toLocaleString()
+            date: new Date().toISOString()
         });
 
         alert("Demande envoyée ! Attendez la confirmation.");
