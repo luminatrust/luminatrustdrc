@@ -57,7 +57,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
         const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
         const userPhone = localStorage.getItem('userPhone');
 
@@ -76,7 +75,7 @@
                         const l1 = users.filter(u => u.parraine_par === myCode);
                         const l1Codes = l1.map(u => u.mon_code);
                         const l2 = users.filter(u => l1Codes.includes(u.parraine_par));
-                        const l2Codes = l2.map(u => l2.mon_code);
+                        const l2Codes = l2.map(u => u.mon_code);
                         const l3 = users.filter(u => l2Codes.includes(u.parraine_par));
 
                         document.getElementById('countL1').innerText = l1.length + " membres";
@@ -92,7 +91,6 @@
             const code = document.getElementById('myCode').innerText;
             if(code === "Chargement..." || code === "Non connecté") return;
             
-            // Construit le lien vers votre page d'inscription
             const link = window.location.origin + "/register.html?ref=" + code;
             
             navigator.clipboard.writeText(link).then(() => {
