@@ -88,7 +88,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
+        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
+        const firebaseConfig = { databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
