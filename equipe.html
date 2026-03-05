@@ -91,7 +91,8 @@
             const code = document.getElementById('myCode').innerText;
             if(code === "Chargement..." || code === "Non connecté") return;
             
-            const link = window.location.origin + "/register.html?ref=" + code;
+            // Correction du chemin vers le dossier réel luminatrustdrc
+            const link = "https://luminatrust.github.io/luminatrustdrc/register.html?ref=" + code;
             
             navigator.clipboard.writeText(link).then(() => {
                 alert("Lien de parrainage copié : " + link);
