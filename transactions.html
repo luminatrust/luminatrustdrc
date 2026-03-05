@@ -21,7 +21,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
         const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
         const userPhone = localStorage.getItem('userPhone');
 
@@ -34,14 +33,19 @@
             
             const transactions = [];
             snap.forEach((child) => { transactions.push(child.val()); });
-            
             transactions.reverse();
 
             transactions.forEach((tr) => {
-                const isRetrait = tr.type === 'Retrait';
-                const couleur = isRetrait ? '#ff4757' : '#22c55e';
-                const signe = isRetrait ? '-' : '+';
-                const fleche = isRetrait ? '🔽' : '🔼';
+                // Logique pour distinguer les types
+                let couleur, signe, fleche;
+                
+                if (tr.type === 'Retrait') {
+                    couleur = '#ff4757'; signe = '-'; fleche = '🔽';
+                } else if (tr.type === 'Commission') {
+                    couleur = '#8b5cf6'; signe = '+'; fleche = '🎁';
+                } else { // Recharge par défaut
+                    couleur = '#22c55e'; signe = '+'; fleche = '🔼';
+                }
 
                 list.innerHTML += `
                     <div class="card">
