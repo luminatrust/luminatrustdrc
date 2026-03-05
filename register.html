@@ -48,9 +48,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const db = getDatabase(initializeApp({ databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" }));
+        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
+        const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
 
-        // 1. Auto-remplissage du parrain via URL
+        // Auto-remplissage du parrain via URL
         const urlParams = new URLSearchParams(window.location.search);
         const refParam = urlParams.get('ref');
         if (refParam) {
@@ -71,7 +72,7 @@
                 const snap = await get(userRef);
                 if(snap.exists()) return alert("Ce numéro est déjà inscrit.");
 
-                // Vérifier si le code parrain est valide (si renseigné)
+                // Vérifier si le code parrain est valide
                 let parrainFinal = "DIRECT";
                 if(refCode) {
                     const allUsersSnap = await get(ref(db, 'users'));
