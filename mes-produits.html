@@ -9,7 +9,18 @@
         body { margin: 0; font-family: 'Outfit', sans-serif; background: #f8faff; padding-bottom: 80px; }
         .header { background: #2563eb; color: white; padding: 40px 20px; border-radius: 0 0 40px 40px; text-align: center; }
         .container { padding: 20px; }
-        .prod-card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 15px; border: 1px solid #eef2f7; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        
+        .prod-card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 20px; border: 1px solid #eef2f7; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        .prod-img { width: 100%; height: 180px; object-fit: cover; border-radius: 20px; margin-bottom: 15px; }
+        
+        .prod-title { font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 10px 0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-item { font-size: 13px; color: #64748b; }
+        .stat-item b { color: #2563eb; display: block; font-size: 15px; }
+        
+        .progress-box { margin-top: 15px; }
+        .bar-bg { background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .bar-fill { background: #fbbf24; height: 100%; }
     </style>
 </head>
 <body>
@@ -20,24 +31,38 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
         const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
         const userPhone = localStorage.getItem('userPhone');
-
         const list = document.getElementById('prodList');
+
         if(!userPhone) window.location.href = "index.html";
 
         onValue(ref(db, 'mes_produits/' + userPhone), (snap) => {
             list.innerHTML = "";
-            if(!snap.exists()) return list.innerHTML = "<p style='text-align:center;'>Aucun produit trouvé.</p>";
+            if(!snap.exists()) return list.innerHTML = "<p style='text-align:center;'>Aucun produit actif.</p>";
 
             snap.forEach((child) => {
                 const p = child.val();
+                // Calcul du cycle (si pas défini dans Firebase, on met 0/180 par défaut)
+                const act = p.cycle_actuel || 0;
+                const tot = p.cycle_total || 180;
+                const percent = (act / tot) * 100;
+
                 list.innerHTML += `
                     <div class="prod-card">
-                        <h3 style="margin:0; color:#2563eb;">${p.nom_produit}</h3>
-                        <p style="font-size:14px; color:#64748b;">Revenu quotidien : <b>${p.revenu_journalier.toLocaleString()} FC</b></p>
-                        <small style="color:#94a3b8;">Acquis le : ${p.date_achat}</small>
+                        <img src="${p.img_url || 'https://via.placeholder.com/400'}" class="prod-img" alt="Produit">
+                        <h3 class="prod-title">${p.nom_produit}</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">Revenu quotidien: <b>${p.revenu_journalier.toLocaleString()} FC</b></div>
+                            <div class="stat-item">Total gagné: <b>${p.revenu_total ? p.revenu_total.toLocaleString() : '0'} FC</b></div>
+                        </div>
+                        <div style="font-size: 11px; color: #94a3b8;">Acheté le : ${p.date_achat}</div>
+                        <div class="progress-box">
+                            <div style="display:flex; justify-content:space-between; font-size: 12px; font-weight:600;">
+                                <span>Cycle</span><span>${act}/${tot}</span>
+                            </div>
+                            <div class="bar-bg"><div class="bar-fill" style="width: ${percent}%"></div></div>
+                        </div>
                     </div>`;
             });
         });
