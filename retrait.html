@@ -27,7 +27,7 @@
 <body>
 
     <div class="header">
-        <h2 style="margin:0;">Portefeuille Lumina</h2>
+        <h2 style="margin:0;">Portefeuille Lumina Trust</h2>
         <p style="font-size: 13px; opacity: 0.8;">Retrait de vos fonds</p>
     </div>
 
@@ -71,9 +71,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://firstsolar-e2ba3-default-rtdb.firebaseio.com" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // URL CORRIGÉE POUR POINTÉ VERS Lumina Trust
+        const db = getDatabase(initializeApp({ databaseURL: "https://lumina-invest-default-rtdb.firebaseio.com" }));
 
         const userPhone = localStorage.getItem('userPhone');
         let currentBalance = 0;
@@ -115,7 +114,7 @@
                     // 1. Déduire le solde utilisateur
                     await update(ref(db, 'users/' + userPhone), { solde: currentBalance - amount });
 
-                    // 2. Envoi vers l'Admin (corrigé pour être lu par admin.html)
+                    // 2. Envoi vers l'Admin
                     const reqData = {
                         phone: userPhone,
                         montant: amount,
@@ -124,7 +123,6 @@
                         statut: "EN_ATTENTE",
                         date: dateStr
                     };
-                    // IMPORTANT: Ce chemin correspond à ce que l'admin écoute
                     await push(ref(db, 'demandes/retraits'), reqData);
 
                     // 3. Envoi vers l'historique utilisateur
